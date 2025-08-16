@@ -274,6 +274,14 @@
             background-color: #2d3748; /* Darker background for description section */
             border-color: #4a5568; /* Darker border */
         }
+        body.dark-mode .filename-input-group label {
+            color: #e2e8f0; /* Light text for label in dark mode */
+        }
+        body.dark-mode .filename-input-group input {
+            background-color: #1a202c; /* Dark input background */
+            border-color: #4a5568; /* Dark input border */
+            color: #f8fafc; /* Light input text */
+        }
 
         /* Dark Mode Toggle Switch Styling */
         .theme-switch {
@@ -345,7 +353,7 @@
                 width: auto;
                 max-width: none;
             }
-            .action-button, h1, .toolbar, .action-buttons, #message, #bookmarkReminder, .description-section, .brief-description, .theme-switch-container { /* Hide theme switch container too */
+            .action-button, h1, .toolbar, .action-buttons, #message, #bookmarkReminder, .description-section, .brief-description, .theme-switch-container, .filename-input-group { /* Hide filename input group too */
                 display: none; /* Hide all interactive elements, reminders, and description when printing */
             }
             .editable-area {
@@ -423,11 +431,17 @@
         <div id="loadingMessage" style="display:none; text-align:center; padding:10px; background-color:#e0f2fe; color:#0b72c4; border-radius:8px; margin-top:10px;">Generating PDF... Please wait.</div>
         <div id="message"></div>
 
+        <!-- Filename Input -->
+        <div class="filename-input-group flex items-center justify-end mb-4">
+            <label for="filenameInput" class="text-gray-700 mr-2">Filename:</label>
+            <input type="text" id="filenameInput" placeholder="document" class="p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow max-w-xs">
+        </div>
 
-        <!-- Action Buttons (Print, Download PDF, Download DOC) -->
+        <!-- Action Buttons (Print, Download PDF, Download DOC, Download TXT) -->
         <div class="action-buttons">
             <button id="downloadPdfButton" class="action-button">Download as PDF</button>
             <button id="downloadDocButton" class="action-button">Download as HTML (for Word)</button>
+            <button id="downloadTxtButton" class="action-button">Download as TXT</button>
             <button id="printButton" class="action-button">Print Document</button>
         </div>
 
@@ -465,17 +479,24 @@
         const highlightColorPicker = document.getElementById('highlightColorPicker');
         const downloadPdfButton = document.getElementById('downloadPdfButton');
         const downloadDocButton = document.getElementById('downloadDocButton');
+        const downloadTxtButton = document.getElementById('downloadTxtButton');
+        const filenameInput = document.getElementById('filenameInput'); // New filename input element
         const messageDisplay = document.getElementById('message');
         const loadingMessage = document.getElementById('loadingMessage');
         const bookmarkReminder = document.getElementById('bookmarkReminder');
-        const darkModeToggle = document.getElementById('darkModeToggle'); // Dark mode toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
 
         const LOCAL_STORAGE_DARK_MODE_KEY = 'darkModeEnabled';
+
+        // Function to get the desired filename
+        function getFileName(extension) {
+            const baseName = filenameInput.value.trim();
+            return `${baseName || 'document'}.${extension}`;
+        }
 
         // Function to display temporary messages (e.g., for download success)
         function showMessage(text, isError = false) {
             messageDisplay.textContent = text;
-            // Clear existing classes and apply new ones for themes
             messageDisplay.className = '';
             messageDisplay.classList.add('show');
             if (isError) {
@@ -483,19 +504,18 @@
             } else {
                 messageDisplay.classList.add('bg-green-100', 'text-green-700');
             }
-            // Ensure message is centered
             messageDisplay.style.top = '50%';
             messageDisplay.style.left = '50%';
             messageDisplay.style.transform = 'translate(-50%, -50%)';
             setTimeout(() => {
-                messageDisplay.className = ''; // Hide after 3 seconds
+                messageDisplay.className = '';
             }, 3000);
         }
 
         // Apply commands to selected text
         function applyCommand(command, value = null) {
             document.execCommand(command, false, value);
-            textInput.focus(); // Keep focus on the editable area
+            textInput.focus();
         }
 
         // Function to set or unset dark mode
@@ -533,12 +553,12 @@
 
         // Event listener for highlight color picker
         highlightColorPicker.addEventListener('input', (event) => {
-            applyCommand('backColor', event.target.value); // 'backColor' is generally preferred for highlight
+            applyCommand('backColor', event.target.value);
         });
 
         // Print functionality
         printButton.addEventListener('click', function() {
-            const textContent = textInput.innerHTML; // Get HTML content
+            const textContent = textInput.innerHTML;
 
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
@@ -549,7 +569,7 @@
                     <style>
                         body {
                             font-family: 'Inter', sans-serif;
-                            margin: 1in; /* Standard print margins */
+                            margin: 1in;
                             font-size: 12pt;
                             line-height: 1.5;
                         }
@@ -564,28 +584,26 @@
 
             printWindow.onload = function() {
                 printWindow.print();
-                // printWindow.close(); // Keep open for user review
             };
         });
 
         // Download as PDF functionality
         downloadPdfButton.addEventListener('click', async function() {
-            loadingMessage.style.display = 'block'; // Show loading message
-            downloadPdfButton.disabled = true; // Disable button during generation
+            loadingMessage.style.display = 'block';
+            downloadPdfButton.disabled = true;
 
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4'); // 'p' for portrait, 'mm' for millimeters, 'a4' for A4 size
+            const doc = new jsPDF('p', 'mm', 'a4');
 
-            // Capture the content editable area
             const canvas = await html2canvas(textInput, {
-                scale: 1.5, // Increased scale for better resolution in PDF
-                useCORS: true, // Important for images/fonts if they are from different origins
-                logging: false // Disable logging for cleaner console
+                scale: 1.5,
+                useCORS: true,
+                logging: false
             });
 
             const imgData = canvas.toDataURL('image/png');
-            const imgWidth = 210; // A4 width in mm
-            const pageHeight = 297; // A4 height in mm
+            const imgWidth = 210;
+            const pageHeight = 297;
 
             const imgHeight = canvas.height * imgWidth / canvas.width;
             let heightLeft = imgHeight;
@@ -601,25 +619,41 @@
                 heightLeft -= pageHeight;
             }
 
-            doc.save('document.pdf');
+            doc.save(getFileName('pdf')); // Use the new getFileName function
 
-            loadingMessage.style.display = 'none'; // Hide loading message
-            downloadPdfButton.disabled = false; // Re-enable button
+            loadingMessage.style.display = 'none';
+            downloadPdfButton.disabled = false;
             showMessage('PDF downloaded successfully!');
         });
 
         // Download as HTML (for Word) functionality
         downloadDocButton.addEventListener('click', function() {
-            const textContent = textInput.innerHTML; // Get HTML content
+            const textContent = textInput.innerHTML;
             const blob = new Blob([textContent], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'document.html';
+            a.download = getFileName('html'); // Use the new getFileName function
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            showMessage('HTML document downloaded successfully!');
+        });
+
+        // Download as TXT functionality
+        downloadTxtButton.addEventListener('click', function() {
+            const textContent = textInput.innerText;
+            const blob = new Blob([textContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = getFileName('txt'); // Use the new getFileName function
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage('TXT document downloaded successfully!');
         });
 
         // Dark Mode Toggle Listener
@@ -629,24 +663,22 @@
 
         // Initialize theme on page load
         window.onload = function() {
-            // Check for saved theme preference
             const savedTheme = localStorage.getItem(LOCAL_STORAGE_DARK_MODE_KEY);
             if (savedTheme === 'enabled') {
                 darkModeToggle.checked = true;
                 setDarkMode(true);
             } else {
                 darkModeToggle.checked = false;
-                setDarkMode(false); // Ensure light mode is set if no preference or 'disabled'
+                setDarkMode(false);
             }
 
-            // Show bookmark reminder after theme is applied
             bookmarkReminder.classList.add('show');
             setTimeout(() => {
                 bookmarkReminder.style.opacity = '0';
                 setTimeout(() => {
-                    bookmarkReminder.style.display = 'none'; // Completely remove after fade
-                }, 1000); // Matches transition duration
-            }, 5000); // Show for 5 seconds
+                    bookmarkReminder.style.display = 'none';
+                }, 1000);
+            }, 5000);
         };
     </script>
 </body>
