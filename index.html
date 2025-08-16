@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paste and Print</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- jsPDF CDN for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px; /* Rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Soft shadow */
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+        }
+        .editable-area {
+            width: 100%;
+            min-height: 400px;
+            padding: 1rem;
+            border: 2px solid #cbd5e0; /* Light gray border */
+            border-radius: 8px; /* Slightly rounded corners */
+            font-size: 1rem;
+            outline: none;
+            overflow-y: auto; /* Enable scrolling for content */
+            transition: border-color 0.2s ease-in-out;
+            line-height: 1.5; /* Improve readability */
+        }
+        .editable-area:focus {
+            border-color: #3b82f6; /* Blue border on focus */
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background-color: #e2e8f0; /* Lighter gray for toolbar */
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .toolbar-button, .toolbar-select, .toolbar-color-picker, .action-button {
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid #cbd5e0;
+            background-color: #ffffff;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, border-color 0.2s ease-in-out;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #4a5568;
+        }
+        .toolbar-button:hover, .toolbar-select:hover, .action-button:hover {
+            background-color: #e2e8f0;
+            border-color: #a0aec0;
+        }
+        .toolbar-button:active, .toolbar-select:active, .action-button:active {
+            transform: translateY(0);
+        }
+        .toolbar-button.active {
+            background-color: #3b82f6;
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+        .toolbar-color-picker {
+            width: 40px; /* Adjust width for color picker */
+            padding: 0;
+            height: 36px; /* Match button height */
+            cursor: pointer;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: flex-end; /* Align buttons to the right */
+        }
+        .action-buttons button {
+            background-color: #2563eb; /* Blue button */
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            border: none;
+        }
+        .action-buttons button:hover {
+            background-color: #1d4ed8; /* Darker blue on hover */
+            transform: translateY(-1px);
+        }
+        .action-buttons button:active {
+            transform: translateY(0);
+        }
+
+        /* Message Display */
+        #message {
+            background-color: #d1fae5; /* Light green for success */
+            color: #065f46; /* Dark green text */
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            margin-top: 0.5rem;
+            position: absolute; /* Position relative to container */
+            top: 50%; /* Center vertically */
+            left: 50%; /* Center horizontally */
+            transform: translate(-50%, -50%); /* Adjust for perfect centering */
+            min-width: 300px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            visibility: hidden; /* Hidden by default */
+            opacity: 0;
+            transition: visibility 0s, opacity 0.5s ease-out;
+            z-index: 100; /* Ensure it's on top */
+        }
+        #message.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        #bookmarkReminder {
+            background-color: #fffbeb; /* Light yellow */
+            color: #92400e; /* Dark yellow/orange text */
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 1rem; /* Space below the reminder */
+            opacity: 0; /* Start hidden */
+            transition: opacity 1s ease-in-out;
+        }
+        #bookmarkReminder.show {
+            opacity: 1;
+        }
+
+        /* Description Section Styling */
+        .description-section {
+            padding: 1rem;
+            background-color: #f8fafc; /* Very light gray */
+            border-radius: 8px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0; /* Light border */
+        }
+        .description-section h2 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #4a5568; /* gray-700 */
+            margin-bottom: 0.75rem; /* mb-3 */
+        }
+        .description-section h3 {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            color: #4a5568; /* gray-700 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .description-section p {
+            color: #4a5568; /* gray-600 */
+            line-height: 1.6; /* leading-relaxed */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .description-section ul {
+            list-style: disc;
+            list-style-position: inside;
+            color: #4a5568; /* gray-600 */
+            padding-left: 1rem;
+            margin-bottom: 1rem; /* Adjust if needed */
+        }
+        .description-section ul li {
+            margin-bottom: 0.5rem; /* space-y-2 */
+            line-height: 1.5;
+        }
+        .description-section strong {
+            font-weight: 700; /* font-bold */
+        }
+
+
+        /* Basic print styles */
+        @media print {
+            body {
+                background-color: #ffffff;
+                margin: 0;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                width: auto;
+                max-width: none;
+            }
+            .action-button, h1, .toolbar, .action-buttons, #message, #bookmarkReminder, .description-section, .brief-description { /* Hide all interactive elements, reminders, and description when printing */
+                display: none; /* Hide all interactive elements, reminders, and description when printing */
+            }
+            .editable-area {
+                border: none;
+                min-height: auto;
+                font-size: 12pt;
+                line-height: 1.5;
+                padding: 0;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 0.5in; /* Add some margins for print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold text-gray-800 text-center mb-4">Paste and Print</h1>
+
+        <!-- Bookmark Reminder Message -->
+        <div id="bookmarkReminder" class="show">
+            Tip: Bookmark this page (Ctrl+D or Cmd+D) to easily return later!
+        </div>
+
+        <!-- Brief Description at the top -->
+        <p class="brief-description text-gray-600 text-center mb-4 leading-relaxed">
+            <strong>Paste and Print</strong> is a free, intuitive, and web-based word processor designed for anyone who needs to quickly paste text, apply basic formatting, and prepare documents for printing or download without any software installation.
+        </p>
+
+        <!-- Editing Toolbar -->
+        <div class="toolbar">
+            <button class="toolbar-button" data-command="bold" title="Bold"><b>B</b></button>
+            <button class="toolbar-button" data-command="italic" title="Italic"><i>I</i></button>
+            <button class="toolbar-button" data-command="underline" title="Underline"><u>U</u></button>
+
+            <select class="toolbar-select" id="fontFamilySelect" title="Font Family">
+                <option value="Inter, sans-serif">Inter</option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Times New Roman, serif">Times New Roman</option>
+                <option value="Courier New, monospace">Courier New</option>
+            </select>
+
+            <select class="toolbar-select" id="fontSizeSelect" title="Font Size">
+                <option value="1">Smallest</option>
+                <option value="2">Smaller</option>
+                <option value="3" selected>Small</option> <!-- Default -->
+                <option value="4">Medium</option>
+                <option value="5">Large</option>
+                <option value="6">Larger</option>
+                <option value="7">Largest</option>
+            </select>
+
+            <input type="color" id="textColorPicker" class="toolbar-color-picker" title="Text Color" value="#000000">
+            <input type="color" id="highlightColorPicker" class="toolbar-color-picker" title="Highlight Color" value="#ffffff">
+        </div>
+
+        <!-- Content Editable Area -->
+        <div id="textInput" contenteditable="true" class="editable-area" role="textbox" aria-multiline="true">
+            <p>Type or paste your text here. Select text to apply formatting!</p>
+        </div>
+
+        <!-- Message display area -->
+        <div id="message"></div>
+
+        <!-- Action Buttons (Print, Download PDF, Download DOC) -->
+        <div class="action-buttons">
+            <button id="downloadPdfButton" class="action-button">Download as PDF</button>
+            <button id="downloadDocButton" class="action-button">Download as HTML (for Word)</button>
+            <button id="printButton" class="action-button">Print Document</button>
+        </div>
+
+        <!-- Detailed Description Section at the bottom -->
+        <div class="description-section">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">About Paste and Print: Features &amp; Benefits</h2>
+            <p class="text-gray-600 mb-4 leading-relaxed">
+                Say goodbye to complex interfaces and unnecessary features; our tool focuses on delivering a streamlined experience for your everyday text handling needs.
+            </p>
+
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Key Features &amp; Benefits:</h3>
+            <ul class="list-disc list-inside text-gray-600 space-y-2">
+                <li><strong>Effortless Text Pasting:</strong> Instantly paste any text content from your clipboard into a clean, editable canvas. Ideal for snippets, articles, emails, or notes.</li>
+                <li><strong>Intuitive Text Formatting:</strong> Easily bold, italicize, underline, change font family, adjust font size, and modify text or highlight colors. Perfect for making your content visually organized and readable.</li>
+                <li><strong>Seamless Document Printing:</strong> Prepare your text for a professional printout with a dedicated print button that optimizes your content for physical copies.</li>
+                <li><strong>Versatile Download Options:</strong> Save your edited work as a PDF for universal compatibility or as an HTML file (easily opened in Microsoft Word or other rich text editors) for further editing.</li>
+                <li><strong>Web-Based Convenience:</strong> Access and use Paste and Print directly from any web browser on any device (desktop, tablet, mobile) – no downloads, no installations, completely free.</li>
+                <li><strong>Clean &amp; User-Friendly Interface:</strong> Enjoy a distraction-free environment that prioritizes ease of use, making text manipulation simple for everyone.</li>
+            </ul>
+
+            <p class="text-gray-600 mt-4 leading-relaxed">
+                Whether you're a student preparing notes, a professional drafting quick emails, or anyone needing to clean up text before sharing or printing, <strong>Paste and Print</strong> offers a fast, reliable, and accessible solution. Bookmark this page (Ctrl+D or Cmd+D) for instant access whenever you need a quick text tool.
+            </p>
+        </div>
+        <!-- End Detailed Description Section -->
+
+    </div>
+
+    <script>
+        const textInput = document.getElementById('textInput');
+        const printButton = document.getElementById('printButton');
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+        const fontSizeSelect = document.getElementById('fontSizeSelect');
+        const textColorPicker = document.getElementById('textColorPicker');
+        const highlightColorPicker = document.getElementById('highlightColorPicker');
+        const downloadPdfButton = document.getElementById('downloadPdfButton');
+        const downloadDocButton = document.getElementById('downloadDocButton');
+        const messageDisplay = document.getElementById('message');
+        const bookmarkReminder = document.getElementById('bookmarkReminder');
+
+
+        // Function to display temporary messages (e.g., for download success)
+        function showMessage(text, isError = false) {
+            messageDisplay.textContent = text;
+            messageDisplay.className = isError ? 'show bg-red-100 text-red-700' : 'show bg-green-100 text-green-700';
+            // Center the message
+            messageDisplay.style.top = '50%';
+            messageDisplay.style.left = '50%';
+            messageDisplay.style.transform = 'translate(-50%, -50%)';
+            setTimeout(() => {
+                messageDisplay.className = ''; // Hide after 3 seconds
+            }, 3000);
+        }
+
+        // Apply commands to selected text
+        function applyCommand(command, value = null) {
+            document.execCommand(command, false, value);
+            textInput.focus(); // Keep focus on the editable area
+        }
+
+        // Event listeners for toolbar buttons
+        document.querySelectorAll('.toolbar-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const command = button.dataset.command;
+                applyCommand(command);
+            });
+        });
+
+        // Event listener for font family select
+        fontFamilySelect.addEventListener('change', (event) => {
+            applyCommand('fontName', event.target.value);
+        });
+
+        // Event listener for font size select
+        fontSizeSelect.addEventListener('change', (event) => {
+            applyCommand('fontSize', event.target.value);
+        });
+
+        // Event listener for text color picker
+        textColorPicker.addEventListener('input', (event) => {
+            applyCommand('foreColor', event.target.value);
+        });
+
+        // Event listener for highlight color picker
+        highlightColorPicker.addEventListener('input', (event) => {
+            applyCommand('backColor', event.target.value); // 'backColor' is generally preferred for highlight
+        });
+
+        // Print functionality
+        printButton.addEventListener('click', function() {
+            const textContent = textInput.innerHTML; // Get HTML content
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Print Document</title>
+                    <style>
+                        body {
+                            font-family: 'Inter', sans-serif;
+                            margin: 1in; /* Standard print margins */
+                            font-size: 12pt;
+                            line-height: 1.5;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${textContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+
+            printWindow.onload = function() {
+                printWindow.print();
+                // printWindow.close(); // Keep open for user review
+            };
+        });
+
+        // Download as PDF functionality
+        downloadPdfButton.addEventListener('click', async function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const content = textInput.innerHTML;
+
+            doc.html(content, {
+                callback: function (doc) {
+                    doc.save('document.pdf');
+                },
+                x: 10,
+                y: 10,
+                html2canvas: { scale: 0.8 },
+                autoPaging: 'text',
+                margin: [10, 10, 10, 10]
+            });
+        });
+
+        // Download as HTML (for Word) functionality
+        downloadDocButton.addEventListener('click', function() {
+            const textContent = textInput.innerHTML; // Get HTML content
+            const blob = new Blob([textContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'document.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Show bookmark reminder on page load and fade it out
+        window.onload = function() {
+            bookmarkReminder.classList.add('show');
+            setTimeout(() => {
+                bookmarkReminder.style.opacity = '0';
+                setTimeout(() => {
+                    bookmarkReminder.style.display = 'none'; // Completely remove after fade
+                }, 1000); // Matches transition duration
+            }, 5000); // Show for 5 seconds
+        };
+    </script>
+</body>
+</html>
