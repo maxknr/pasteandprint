@@ -7,11 +7,11 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- html2canvas CDN for PDF generation (REQUIRED for jspdf.html) -->
+    <!-- html2canvas CDN for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- jsPDF CDN for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- DOMPurify CDN for HTML sanitization (dependency for jspdf.html) -->
+    <!-- DOMPurify CDN for HTML sanitization -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.10/purify.min.js"></script>
     <style>
         body {
@@ -273,7 +273,9 @@
         </div>
 
         <!-- Message display area -->
+        <div id="loadingMessage" style="display:none; text-align:center; padding:10px; background-color:#e0f2fe; color:#0b72c4; border-radius:8px; margin-top:10px;">Generating PDF... Please wait.</div>
         <div id="message"></div>
+
 
         <!-- Action Buttons (Print, Download PDF, Download DOC) -->
         <div class="action-buttons">
@@ -317,6 +319,7 @@
         const downloadPdfButton = document.getElementById('downloadPdfButton');
         const downloadDocButton = document.getElementById('downloadDocButton');
         const messageDisplay = document.getElementById('message');
+        const loadingMessage = document.getElementById('loadingMessage'); // Added loading message element
         const bookmarkReminder = document.getElementById('bookmarkReminder');
 
 
@@ -401,20 +404,42 @@
 
         // Download as PDF functionality
         downloadPdfButton.addEventListener('click', async function() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const content = textInput.innerHTML;
+            loadingMessage.style.display = 'block'; // Show loading message
+            downloadPdfButton.disabled = true; // Disable button during generation
 
-            doc.html(content, {
-                callback: function (doc) {
-                    doc.save('document.pdf');
-                },
-                x: 10,
-                y: 10,
-                html2canvas: { scale: 0.8 },
-                autoPaging: 'text',
-                margin: [10, 10, 10, 10]
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4'); // 'p' for portrait, 'mm' for millimeters, 'a4' for A4 size
+
+            // Capture the content editable area
+            const canvas = await html2canvas(textInput, {
+                scale: 1.5, // Increased scale for better resolution in PDF
+                useCORS: true, // Important for images/fonts if they are from different origins
+                logging: false // Disable logging for cleaner console
             });
+
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 210; // A4 width in mm
+            const pageHeight = 297; // A4 height in mm
+
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                doc.addPage();
+                doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            doc.save('document.pdf');
+
+            loadingMessage.style.display = 'none'; // Hide loading message
+            downloadPdfButton.disabled = false; // Re-enable button
+            showMessage('PDF downloaded successfully!');
         });
 
         // Download as HTML (for Word) functionality
