@@ -14,6 +14,7 @@
     <!-- DOMPurify CDN for HTML sanitization -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.10/purify.min.js"></script>
     <style>
+        /* Base Light Mode Styles */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8; /* Light gray background */
@@ -24,6 +25,7 @@
             margin: 0;
             padding: 1rem;
             box-sizing: border-box;
+            transition: background-color 0.3s ease; /* Smooth transition for theme change */
         }
         .container {
             background-color: #ffffff;
@@ -36,6 +38,7 @@
             flex-direction: column;
             gap: 1rem;
             position: relative;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
         .editable-area {
             width: 100%;
@@ -46,8 +49,9 @@
             font-size: 1rem;
             outline: none;
             overflow-y: auto; /* Enable scrolling for content */
-            transition: border-color 0.2s ease-in-out;
+            transition: border-color 0.2s ease-in-out, background-color 0.3s ease, color 0.3s ease;
             line-height: 1.5; /* Improve readability */
+            color: #333; /* Default text color */
         }
         .editable-area:focus {
             border-color: #3b82f6; /* Blue border on focus */
@@ -60,6 +64,7 @@
             background-color: #e2e8f0; /* Lighter gray for toolbar */
             border-radius: 8px;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
         .toolbar-button, .toolbar-select, .toolbar-color-picker, .action-button {
             padding: 0.5rem 0.75rem;
@@ -67,7 +72,7 @@
             border: 1px solid #cbd5e0;
             background-color: #ffffff;
             cursor: pointer;
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, border-color 0.2s ease-in-out;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, border-color 0.2s ease-in-out, color 0.3s ease;
             font-size: 0.9rem;
             font-weight: 500;
             color: #4a5568;
@@ -131,7 +136,7 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             visibility: hidden; /* Hidden by default */
             opacity: 0;
-            transition: visibility 0s, opacity 0.5s ease-out;
+            transition: visibility 0s, opacity 0.5s ease-out, background-color 0.3s ease, color 0.3s ease;
             z-index: 100; /* Ensure it's on top */
         }
         #message.show {
@@ -147,41 +152,47 @@
             font-weight: 500;
             margin-bottom: 1rem; /* Space below the reminder */
             opacity: 0; /* Start hidden */
-            transition: opacity 1s ease-in-out;
+            transition: opacity 1s ease-in-out, background-color 0.3s ease, color 0.3s ease;
         }
         #bookmarkReminder.show {
             opacity: 1;
         }
 
         /* Description Section Styling */
+        .brief-description,
+        .description-section p,
+        .description-section ul li {
+            color: #4a5568; /* gray-600 */
+        }
+        .description-section h2,
+        .description-section h3 {
+            color: #4a5568; /* gray-700 */
+        }
         .description-section {
             padding: 1rem;
             background-color: #f8fafc; /* Very light gray */
             border-radius: 8px;
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             border: 1px solid #e2e8f0; /* Light border */
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
         .description-section h2 {
             font-size: 1.25rem; /* text-xl */
             font-weight: 600; /* font-semibold */
-            color: #4a5568; /* gray-700 */
             margin-bottom: 0.75rem; /* mb-3 */
         }
         .description-section h3 {
             font-size: 1.125rem; /* text-lg */
             font-weight: 600; /* font-semibold */
-            color: #4a5568; /* gray-700 */
             margin-bottom: 0.5rem; /* mb-2 */
         }
         .description-section p {
-            color: #4a5568; /* gray-600 */
             line-height: 1.6; /* leading-relaxed */
             margin-bottom: 1rem; /* mb-4 */
         }
         .description-section ul {
             list-style: disc;
             list-style-position: inside;
-            color: #4a5568; /* gray-600 */
             padding-left: 1rem;
             margin-bottom: 1rem; /* Adjust if needed */
         }
@@ -193,6 +204,132 @@
             font-weight: 700; /* font-bold */
         }
 
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #1a202c; /* Darker background for body */
+        }
+        body.dark-mode .container {
+            background-color: #2d3748; /* Darker background for container */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+        }
+        body.dark-mode h1,
+        body.dark-mode .brief-description,
+        body.dark-mode .description-section p,
+        body.dark-mode .description-section ul li,
+        body.dark-mode .description-section h2,
+        body.dark-mode .description-section h3 {
+            color: #e2e8f0; /* Light text for dark mode */
+        }
+        body.dark-mode .editable-area {
+            background-color: #111827; /* Very dark background for editable area */
+            color: #f8fafc; /* Light text color */
+            border-color: #4a5568; /* Darker border */
+        }
+        body.dark-mode .editable-area:focus {
+            border-color: #6366f1; /* Purple border on focus */
+        }
+        body.dark-mode .toolbar {
+            background-color: #4a5568; /* Darker toolbar background */
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        body.dark-mode .toolbar-button,
+        body.dark-mode .toolbar-select,
+        body.dark-mode .toolbar-color-picker,
+        body.dark-mode .action-button {
+            background-color: #6b7280; /* Darker button background */
+            color: #f8fafc; /* Light text */
+            border-color: #718096; /* Darker border */
+        }
+        body.dark-mode .toolbar-button:hover,
+        body.dark-mode .toolbar-select:hover,
+        body.dark-mode .action-button:hover {
+            background-color: #718096; /* Slightly lighter dark on hover */
+            border-color: #a0aec0;
+        }
+        body.dark-mode .toolbar-button.active {
+            background-color: #4f46e5; /* Dark purple active */
+            color: #ffffff;
+            border-color: #4f46e5;
+        }
+        body.dark-mode .action-buttons button {
+            background-color: #4f46e5; /* Darker blue button */
+            color: #ffffff;
+        }
+        body.dark-mode .action-buttons button:hover {
+            background-color: #6366f1; /* Even darker blue on hover */
+        }
+        body.dark-mode #message {
+            background-color: #166534; /* Darker green for success */
+            color: #d1fae5; /* Lighter green text */
+        }
+        body.dark-mode #bookmarkReminder {
+            background-color: #58330a; /* Darker yellow for reminder */
+            color: #fbd38d; /* Lighter yellow text */
+        }
+        body.dark-mode #loadingMessage {
+            background-color: #1e3a8a; /* Darker blue for loading */
+            color: #bfdbfe; /* Lighter blue text */
+        }
+        body.dark-mode .description-section {
+            background-color: #2d3748; /* Darker background for description section */
+            border-color: #4a5568; /* Darker border */
+        }
+
+        /* Dark Mode Toggle Switch Styling */
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #6366f1; /* Purple for dark mode */
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #6366f1;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(26px);
+            -ms-transform: translateX(26px);
+            transform: translateX(26px);
+        }
 
         /* Basic print styles */
         @media print {
@@ -208,7 +345,7 @@
                 width: auto;
                 max-width: none;
             }
-            .action-button, h1, .toolbar, .action-buttons, #message, #bookmarkReminder, .description-section, .brief-description { /* Hide all interactive elements, reminders, and description when printing */
+            .action-button, h1, .toolbar, .action-buttons, #message, #bookmarkReminder, .description-section, .brief-description, .theme-switch-container { /* Hide theme switch container too */
                 display: none; /* Hide all interactive elements, reminders, and description when printing */
             }
             .editable-area {
@@ -226,7 +363,17 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="text-2xl font-bold text-gray-800 text-center mb-4">Paste and Print</h1>
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-bold text-gray-800 text-center flex-grow">Paste and Print</h1>
+            <div class="theme-switch-container flex items-center">
+                <span class="text-gray-700 dark:text-gray-300 mr-2">Light</span>
+                <label class="theme-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider round"></span>
+                </label>
+                <span class="text-gray-700 dark:text-gray-300 ml-2">Dark</span>
+            </div>
+        </div>
 
         <!-- Bookmark Reminder Message -->
         <div id="bookmarkReminder" class="show">
@@ -234,7 +381,7 @@
         </div>
 
         <!-- Brief Description at the top -->
-        <p class="brief-description text-gray-600 text-center mb-4 leading-relaxed">
+        <p class="brief-description text-center mb-4 leading-relaxed">
             <strong>Paste and Print</strong> is a free, intuitive, and web-based word processor designed for anyone who needs to quickly paste text, apply basic formatting, and prepare documents for printing or download without any software installation.
         </p>
 
@@ -286,13 +433,13 @@
 
         <!-- Detailed Description Section at the bottom -->
         <div class="description-section">
-            <h2 class="text-xl font-semibold text-gray-700 mb-2">About Paste and Print: Features &amp; Benefits</h2>
-            <p class="text-gray-600 mb-4 leading-relaxed">
+            <h2 class="text-xl font-semibold mb-2">About Paste and Print: Features &amp; Benefits</h2>
+            <p class="mb-4 leading-relaxed">
                 Say goodbye to complex interfaces and unnecessary features; our tool focuses on delivering a streamlined experience for your everyday text handling needs.
             </p>
 
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">Key Features &amp; Benefits:</h3>
-            <ul class="list-disc list-inside text-gray-600 space-y-2">
+            <h3 class="text-lg font-semibold mb-2">Key Features &amp; Benefits:</h3>
+            <ul class="list-disc list-inside space-y-2">
                 <li><strong>Effortless Text Pasting:</strong> Instantly paste any text content from your clipboard into a clean, editable canvas. Ideal for snippets, articles, emails, or notes.</li>
                 <li><strong>Intuitive Text Formatting:</strong> Easily bold, italicize, underline, change font family, adjust font size, and modify text or highlight colors. Perfect for making your content visually organized and readable.</li>
                 <li><strong>Seamless Document Printing:</strong> Prepare your text for a professional printout with a dedicated print button that optimizes your content for physical copies.</li>
@@ -301,7 +448,7 @@
                 <li><strong>Clean &amp; User-Friendly Interface:</strong> Enjoy a distraction-free environment that prioritizes ease of use, making text manipulation simple for everyone.</li>
             </ul>
 
-            <p class="text-gray-600 mt-4 leading-relaxed">
+            <p class="mt-4 leading-relaxed">
                 Whether you're a student preparing notes, a professional drafting quick emails, or anyone needing to clean up text before sharing or printing, <strong>Paste and Print</strong> offers a fast, reliable, and accessible solution. Bookmark this page (Ctrl+D or Cmd+D) for instant access whenever you need a quick text tool.
             </p>
         </div>
@@ -319,15 +466,24 @@
         const downloadPdfButton = document.getElementById('downloadPdfButton');
         const downloadDocButton = document.getElementById('downloadDocButton');
         const messageDisplay = document.getElementById('message');
-        const loadingMessage = document.getElementById('loadingMessage'); // Added loading message element
+        const loadingMessage = document.getElementById('loadingMessage');
         const bookmarkReminder = document.getElementById('bookmarkReminder');
+        const darkModeToggle = document.getElementById('darkModeToggle'); // Dark mode toggle
 
+        const LOCAL_STORAGE_DARK_MODE_KEY = 'darkModeEnabled';
 
         // Function to display temporary messages (e.g., for download success)
         function showMessage(text, isError = false) {
             messageDisplay.textContent = text;
-            messageDisplay.className = isError ? 'show bg-red-100 text-red-700' : 'show bg-green-100 text-green-700';
-            // Center the message
+            // Clear existing classes and apply new ones for themes
+            messageDisplay.className = '';
+            messageDisplay.classList.add('show');
+            if (isError) {
+                messageDisplay.classList.add('bg-red-100', 'text-red-700');
+            } else {
+                messageDisplay.classList.add('bg-green-100', 'text-green-700');
+            }
+            // Ensure message is centered
             messageDisplay.style.top = '50%';
             messageDisplay.style.left = '50%';
             messageDisplay.style.transform = 'translate(-50%, -50%)';
@@ -340,6 +496,16 @@
         function applyCommand(command, value = null) {
             document.execCommand(command, false, value);
             textInput.focus(); // Keep focus on the editable area
+        }
+
+        // Function to set or unset dark mode
+        function setDarkMode(isEnabled) {
+            if (isEnabled) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+            localStorage.setItem(LOCAL_STORAGE_DARK_MODE_KEY, isEnabled ? 'enabled' : 'disabled');
         }
 
         // Event listeners for toolbar buttons
@@ -456,8 +622,24 @@
             URL.revokeObjectURL(url);
         });
 
-        // Show bookmark reminder on page load and fade it out
+        // Dark Mode Toggle Listener
+        darkModeToggle.addEventListener('change', (event) => {
+            setDarkMode(event.target.checked);
+        });
+
+        // Initialize theme on page load
         window.onload = function() {
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem(LOCAL_STORAGE_DARK_MODE_KEY);
+            if (savedTheme === 'enabled') {
+                darkModeToggle.checked = true;
+                setDarkMode(true);
+            } else {
+                darkModeToggle.checked = false;
+                setDarkMode(false); // Ensure light mode is set if no preference or 'disabled'
+            }
+
+            // Show bookmark reminder after theme is applied
             bookmarkReminder.classList.add('show');
             setTimeout(() => {
                 bookmarkReminder.style.opacity = '0';
